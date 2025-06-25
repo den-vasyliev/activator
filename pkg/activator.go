@@ -66,7 +66,15 @@ func activatorHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	serviceName := fmt.Sprintf("%s-ecosystem-%s", env, svc)
-	fqdn := fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, namespace)
+
+	svcObj, err := client.CoreV1().Services(namespace).Get(r.Context(), serviceName, metav1.GetOptions{})
+	if err != nil || len(svcObj.Spec.Ports) == 0 {
+		http.Error(w, "Service not found or has no ports", http.StatusInternalServerError)
+		log.Error().Err(err).Msgf("Failed to get service or ports for %s", serviceName)
+		return
+	}
+	port := svcObj.Spec.Ports[0].Port
+	fqdn := fmt.Sprintf("%s.%s.svc.cluster.local:%d", serviceName, namespace, port)
 
 	if !cache.IsReady(serviceName) {
 		if !isDeploymentReady(namespace, serviceName) {
