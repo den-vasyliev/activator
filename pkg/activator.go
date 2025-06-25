@@ -70,13 +70,7 @@ func activatorHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !cache.IsReady(serviceName) {
 		if !isDeploymentReady(namespace, serviceName) {
-			log.Info().Msgf("Deployment %s not ready. Scaling up...", serviceName)
-			err := scaleDeployment(namespace, serviceName, 1)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Scale up failed: %v", err), http.StatusInternalServerError)
-				return
-			}
-			waitForDeployment(namespace, serviceName, 120*time.Second)
+			log.Info().Msgf("Deployment %s not ready. Would scale up, but no action taken.", serviceName)
 		}
 		cache.MarkReady(serviceName)
 	}
